@@ -40,7 +40,7 @@ func (c *controller) Action(context *admin.Context) {
 		}
 
 		if action.Resource != nil {
-			result := action.Resource.NewStruct()
+			result := action.Resource.NewStruct(context.Site)
 			action.Resource.Decode(context.Context, result)
 			actionArgument.Argument = result
 		}
@@ -72,7 +72,7 @@ func (c *controller) UndoAction(context *admin.Context) {
 	}
 
 	if action.Resource != nil {
-		result := action.Resource.NewStruct()
+		result := action.Resource.NewStruct(context.Site)
 		action.Resource.Decode(context.Context, result)
 		actionArgument.Argument = result
 	}
