@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/qor/admin"
-	"github.com/qor/responder"
+	"github.com/aghape/admin"
+	"github.com/aghape/responder"
 )
 
 type controller struct {
@@ -52,11 +52,11 @@ func (c *controller) Action(context *admin.Context) {
 				http.Redirect(context.Writer, context.Request, context.Request.Referer(), http.StatusFound)
 			}).With("json", func() {
 				notification := c.Notification.GetNotification(context.CurrentUser, context.ResourceID, context.Context)
-				context.JSON("OK", map[string]string{"status": "ok", "message": flash, "notification": string(context.Render("notification", notification))})
+				context.JSON(map[string]string{"status": "ok", "message": flash, "notification": string(context.Render("notification", notification))}, "OK")
 			}).Respond(context.Request)
 		} else {
 			notification := c.Notification.GetNotification(context.CurrentUser, context.ResourceID, context.Context)
-			context.JSON("OK", map[string]string{"status": "error", "error": action.FlashMessage(actionArgument, false /* succeed */, false /* undo */), "notification": string(context.Render("notification", notification))})
+			context.JSON(map[string]string{"status": "error", "error": action.FlashMessage(actionArgument, false /* succeed */, false /* undo */), "notification": string(context.Render("notification", notification))}, "OK")
 		}
 	}
 }
@@ -84,10 +84,10 @@ func (c *controller) UndoAction(context *admin.Context) {
 			http.Redirect(context.Writer, context.Request, context.Request.Referer(), http.StatusFound)
 		}).With("json", func() {
 			notification := c.Notification.GetNotification(context.CurrentUser, context.ResourceID, context.Context)
-			context.JSON("OK", map[string]string{"status": "ok", "message": flash, "notification": string(context.Render("notification", notification))})
+			context.JSON(map[string]string{"status": "ok", "message": flash, "notification": string(context.Render("notification", notification))}, "OK")
 		}).Respond(context.Request)
 	} else {
 		notification := c.Notification.GetNotification(context.CurrentUser, context.ResourceID, context.Context)
-		context.JSON("OK", map[string]string{"status": "error", "error": action.FlashMessage(actionArgument, false /* succeed */, true /* undo */), "notification": string(context.Render("notification", notification))})
+		context.JSON(map[string]string{"status": "error", "error": action.FlashMessage(actionArgument, false /* succeed */, true /* undo */), "notification": string(context.Render("notification", notification))}, "OK")
 	}
 }

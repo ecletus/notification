@@ -6,25 +6,23 @@ import (
 	"strconv"
 
 	"github.com/jinzhu/gorm"
-	"github.com/qor/notification"
-	"github.com/qor/qor"
+	"github.com/aghape/notification"
+	"github.com/aghape/aghape"
 )
 
 type Config struct {
-	DB *gorm.DB
 }
 
-func New(config *Config) *Database {
-	if config.DB != nil {
-		config.DB.AutoMigrate(&notification.QorNotification{})
-	} else {
-		fmt.Println("Need to have gorm DB in the configuration in order to run migrations")
-	}
-	return &Database{Config: config}
+func New() *Database {
+	return &Database{&Config{}}
 }
 
 type Database struct {
 	Config *Config
+}
+
+func (d *Database) Setup(db *gorm.DB) error {
+	return db.AutoMigrate(&notification.QorNotification{}).Error
 }
 
 func (database *Database) Send(message *notification.Message, context *qor.Context) error {

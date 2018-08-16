@@ -1,6 +1,6 @@
 package notification
 
-import "github.com/qor/qor"
+import "github.com/aghape/aghape"
 
 func (notification *Notification) RegisterChannel(channel ChannelInterface) {
 	notification.Channels = append(notification.Channels, channel)

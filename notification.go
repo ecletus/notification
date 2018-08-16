@@ -1,13 +1,11 @@
 package notification
 
 import (
-	"path"
-
-	"github.com/qor/admin"
-	"github.com/qor/qor"
-	"github.com/qor/qor/resource"
-	"github.com/qor/qor/utils"
-	"github.com/qor/roles"
+	"github.com/aghape/admin"
+	"github.com/aghape/aghape"
+	"github.com/aghape/aghape/resource"
+	"github.com/aghape/aghape/utils"
+	"github.com/aghape/roles"
 )
 
 type Notification struct {
@@ -68,7 +66,6 @@ func (notification *Notification) GetNotification(user interface{}, messageID st
 func (notification *Notification) ConfigureQorResource(res resource.Resourcer) {
 	if res, ok := res.(*admin.Resource); ok {
 		Admin := res.GetAdmin()
-		Admin.RegisterViewPath("github.com/qor/notification/views")
 
 		if len(notification.Channels) == 0 {
 			utils.ExitWithMsg("No channel defined for notification")
@@ -78,31 +75,32 @@ func (notification *Notification) ConfigureQorResource(res resource.Resourcer) {
 			return notification.GetUnresolvedNotificationsCount(context.CurrentUser, context.Context)
 		})
 
-		router := Admin.GetRouter()
+		router := Admin.Router
 		notificationController := controller{Notification: notification}
 
-		router.Get("!notifications", notificationController.List, &admin.RouteConfig{
+		router.Get("/!notifications", admin.NewHandler(notificationController.List, &admin.RouteConfig{
 			PermissionMode: roles.Read,
 			Resource:       res,
-		})
+		}))
 
 		for _, action := range notification.Actions {
 			actionController := controller{Notification: notification, action: action}
-			router.Get(path.Join("!notifications", res.ParamIDName(), action.ToParam()), actionController.Action, &admin.RouteConfig{
+			actionParam := "/!notifications/" + action.ToParam()
+			res.ObjectRouter.Get(actionParam, admin.NewHandler(actionController.Action, &admin.RouteConfig{
 				PermissionMode: roles.Update,
 				Resource:       res,
-			})
+			}))
 
-			router.Put(path.Join("!notifications", res.ParamIDName(), action.ToParam()), actionController.Action, &admin.RouteConfig{
+			res.ObjectRouter.Put(actionParam, admin.NewHandler(actionController.Action, &admin.RouteConfig{
 				PermissionMode: roles.Update,
 				Resource:       res,
-			})
+			}))
 
 			if action.Undo != nil {
-				router.Put(path.Join("!notifications", res.ParamIDName(), action.ToParam(), "undo"), actionController.UndoAction, &admin.RouteConfig{
+				res.ObjectRouter.Put(actionParam + "/undo", admin.NewHandler(actionController.UndoAction, &admin.RouteConfig{
 					PermissionMode: roles.Update,
 					Resource:       res,
-				})
+				}))
 			}
 		}
 	}
