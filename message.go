@@ -3,7 +3,7 @@ package notification
 import (
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"github.com/moisespsena-go/aorm"
 	"github.com/aghape/admin"
 )
 
@@ -17,7 +17,7 @@ type Message struct {
 }
 
 type QorNotification struct {
-	gorm.Model
+	aorm.Model
 	From        string
 	To          string
 	Title       string

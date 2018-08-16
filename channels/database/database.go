@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/jinzhu/gorm"
+	"github.com/moisespsena-go/aorm"
 	"github.com/aghape/notification"
 	"github.com/aghape/aghape"
 )
@@ -21,7 +21,7 @@ type Database struct {
 	Config *Config
 }
 
-func (d *Database) Setup(db *gorm.DB) error {
+func (d *Database) Setup(db *aorm.DB) error {
 	return db.AutoMigrate(&notification.QorNotification{}).Error
 }
 
