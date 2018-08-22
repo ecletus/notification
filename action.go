@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/aghape/admin"
-	"github.com/aghape/aghape/utils"
+	"github.com/aghape/core/utils"
 )
 
 func (notification *Notification) Action(action *Action) error {

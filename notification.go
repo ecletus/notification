@@ -2,9 +2,9 @@ package notification
 
 import (
 	"github.com/aghape/admin"
-	"github.com/aghape/aghape"
-	"github.com/aghape/aghape/resource"
-	"github.com/aghape/aghape/utils"
+	"github.com/aghape/core"
+	"github.com/aghape/core/resource"
+	"github.com/aghape/core/utils"
 	"github.com/aghape/roles"
 )
 
@@ -19,7 +19,7 @@ func New(config *Config) *Notification {
 	return notification
 }
 
-func (notification *Notification) Send(message *Message, context *qor.Context) error {
+func (notification *Notification) Send(message *Message, context *core.Context) error {
 	for _, channel := range notification.Channels {
 		if err := channel.Send(message, context); err != nil {
 			return err
@@ -34,7 +34,7 @@ type NotificationsResult struct {
 	Resolved      []*QorNotification
 }
 
-func (notification *Notification) GetNotifications(user interface{}, context *qor.Context) *NotificationsResult {
+func (notification *Notification) GetNotifications(user interface{}, context *core.Context) *NotificationsResult {
 	var results = NotificationsResult{
 		Notification: notification,
 	}
@@ -46,7 +46,7 @@ func (notification *Notification) GetNotifications(user interface{}, context *qo
 	return &results
 }
 
-func (notification *Notification) GetUnresolvedNotificationsCount(user interface{}, context *qor.Context) uint {
+func (notification *Notification) GetUnresolvedNotificationsCount(user interface{}, context *core.Context) uint {
 	var result uint
 	for _, channel := range notification.Channels {
 		result += channel.GetUnresolvedNotificationsCount(user, notification, context)
@@ -54,7 +54,7 @@ func (notification *Notification) GetUnresolvedNotificationsCount(user interface
 	return result
 }
 
-func (notification *Notification) GetNotification(user interface{}, messageID string, context *qor.Context) *QorNotification {
+func (notification *Notification) GetNotification(user interface{}, messageID string, context *core.Context) *QorNotification {
 	for _, channel := range notification.Channels {
 		if message, err := channel.GetNotification(user, messageID, notification, context); err == nil {
 			return message

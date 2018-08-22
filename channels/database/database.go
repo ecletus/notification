@@ -7,7 +7,7 @@ import (
 
 	"github.com/moisespsena-go/aorm"
 	"github.com/aghape/notification"
-	"github.com/aghape/aghape"
+	"github.com/aghape/core"
 )
 
 type Config struct {
@@ -25,7 +25,7 @@ func (d *Database) Setup(db *aorm.DB) error {
 	return db.AutoMigrate(&notification.QorNotification{}).Error
 }
 
-func (database *Database) Send(message *notification.Message, context *qor.Context) error {
+func (database *Database) Send(message *notification.Message, context *core.Context) error {
 	notice := notification.QorNotification{
 		From:        database.getUserID(message.From, context),
 		To:          database.getUserID(message.To, context),
@@ -38,7 +38,7 @@ func (database *Database) Send(message *notification.Message, context *qor.Conte
 	return context.GetDB().Save(&notice).Error
 }
 
-func (database *Database) GetNotifications(user interface{}, results *notification.NotificationsResult, _ *notification.Notification, context *qor.Context) error {
+func (database *Database) GetNotifications(user interface{}, results *notification.NotificationsResult, _ *notification.Notification, context *core.Context) error {
 	var to = database.getUserID(user, context)
 	var db = context.GetDB()
 
@@ -83,7 +83,7 @@ func (database *Database) GetNotifications(user interface{}, results *notificati
 	return commonDB.Offset(offset).Limit(perPage).Find(&results.Resolved, fmt.Sprintf("%v IS NOT NULL", db.Dialect().Quote("resolved_at"))).Error
 }
 
-func (database *Database) GetUnresolvedNotificationsCount(user interface{}, _ *notification.Notification, context *qor.Context) uint {
+func (database *Database) GetUnresolvedNotificationsCount(user interface{}, _ *notification.Notification, context *core.Context) uint {
 	var to = database.getUserID(user, context)
 	var db = context.GetDB()
 
@@ -92,7 +92,7 @@ func (database *Database) GetUnresolvedNotificationsCount(user interface{}, _ *n
 	return result
 }
 
-func (database *Database) GetNotification(user interface{}, notificationID string, _ *notification.Notification, context *qor.Context) (*notification.QorNotification, error) {
+func (database *Database) GetNotification(user interface{}, notificationID string, _ *notification.Notification, context *core.Context) (*notification.QorNotification, error) {
 	var (
 		notice notification.QorNotification
 		to     = database.getUserID(user, context)
@@ -103,7 +103,7 @@ func (database *Database) GetNotification(user interface{}, notificationID strin
 	return &notice, err
 }
 
-func (database *Database) getUserID(user interface{}, context *qor.Context) string {
+func (database *Database) getUserID(user interface{}, context *core.Context) string {
 	var (
 		userID string
 		scope  = context.GetDB().NewScope(user)
