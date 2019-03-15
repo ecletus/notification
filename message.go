@@ -1,11 +1,11 @@
 package notification
 
 import (
-	"github.com/aghape/common"
+	"github.com/ecletus/common"
 	"time"
 
 	"github.com/moisespsena-go/aorm"
-	"github.com/aghape/admin"
+	"github.com/ecletus/admin"
 )
 
 type Message struct {

@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/aghape/admin"
-	"github.com/aghape/responder"
+	"github.com/ecletus/admin"
+	"github.com/ecletus/responder"
 )
 
 type controller struct {

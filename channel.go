@@ -1,8 +1,8 @@
 package notification
 
 import (
-	"github.com/aghape/common"
-	"github.com/aghape/core"
+	"github.com/ecletus/common"
+	"github.com/ecletus/core"
 )
 
 func (notification *Notification) RegisterChannel(channel ChannelInterface) {

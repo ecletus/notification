@@ -1,8 +1,8 @@
 package database
 
 import (
-	"github.com/aghape/notification"
-	"github.com/aghape/plug"
+	"github.com/ecletus/notification"
+	"github.com/ecletus/plug"
 )
 
 type ChannelPlugin struct {
