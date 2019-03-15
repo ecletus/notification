@@ -2,15 +2,24 @@ package database
 
 import (
 	"fmt"
-	"reflect"
 	"strconv"
 
-	"github.com/moisespsena-go/aorm"
-	"github.com/aghape/notification"
+	"github.com/aghape/common"
+
 	"github.com/aghape/core"
+	"github.com/aghape/notification"
+	"github.com/moisespsena-go/aorm"
 )
 
 type Config struct {
+	DBName string
+}
+
+func (c *Config) DBNameOrSystem() string {
+	if c.DBName == "" {
+		c.DBName = "system"
+	}
+	return c.DBName
 }
 
 func New() *Database {
@@ -25,22 +34,29 @@ func (d *Database) Setup(db *aorm.DB) error {
 	return db.AutoMigrate(&notification.QorNotification{}).Error
 }
 
+func (database *Database) GetDB(context *core.Context) *aorm.DB {
+	if context.Site == nil {
+		return context.DB
+	}
+	return context.Site.GetDB(database.Config.DBNameOrSystem()).DB
+}
+
 func (database *Database) Send(message *notification.Message, context *core.Context) error {
 	notice := notification.QorNotification{
-		From:        database.getUserID(message.From, context),
-		To:          database.getUserID(message.To, context),
+		From:        message.From.GetID(),
+		To:          message.From.GetID(),
 		Title:       message.Title,
 		Body:        message.Body,
 		MessageType: message.MessageType,
 		ResolvedAt:  message.ResolvedAt,
 	}
 
-	return context.GetDB().Save(&notice).Error
+	return database.GetDB(context).Save(&notice).Error
 }
 
-func (database *Database) GetNotifications(user interface{}, results *notification.NotificationsResult, _ *notification.Notification, context *core.Context) error {
-	var to = database.getUserID(user, context)
-	var db = context.GetDB()
+func (database *Database) GetNotifications(user common.User, results *notification.NotificationsResult, _ *notification.Notification, context *core.Context) error {
+	var to = user.GetID()
+	var db = database.GetDB(context)
 
 	var currentPage, perPage int
 
@@ -83,37 +99,22 @@ func (database *Database) GetNotifications(user interface{}, results *notificati
 	return commonDB.Offset(offset).Limit(perPage).Find(&results.Resolved, fmt.Sprintf("%v IS NOT NULL", db.Dialect().Quote("resolved_at"))).Error
 }
 
-func (database *Database) GetUnresolvedNotificationsCount(user interface{}, _ *notification.Notification, context *core.Context) uint {
-	var to = database.getUserID(user, context)
-	var db = context.GetDB()
+func (database *Database) GetUnresolvedNotificationsCount(user common.User, _ *notification.Notification, context *core.Context) uint {
+	var to = user.GetID()
+	var db = database.GetDB(context)
 
 	var result uint
 	db.Model(&notification.QorNotification{}).Where(fmt.Sprintf("%v = ? AND %v IS NULL", db.Dialect().Quote("to"), db.Dialect().Quote("resolved_at")), to).Count(&result)
 	return result
 }
 
-func (database *Database) GetNotification(user interface{}, notificationID string, _ *notification.Notification, context *core.Context) (*notification.QorNotification, error) {
+func (database *Database) GetNotification(user common.User, notificationID string, _ *notification.Notification, context *core.Context) (*notification.QorNotification, error) {
 	var (
 		notice notification.QorNotification
-		to     = database.getUserID(user, context)
-		db     = context.GetDB()
+		to     = user.GetID()
+		db     = database.GetDB(context)
 	)
 
 	err := db.First(&notice, fmt.Sprintf("%v = ? AND %v = ?", db.Dialect().Quote("to"), db.Dialect().Quote("id")), to, notificationID).Error
 	return &notice, err
-}
-
-func (database *Database) getUserID(user interface{}, context *core.Context) string {
-	var (
-		userID string
-		scope  = context.GetDB().NewScope(user)
-	)
-
-	if scope.IndirectValue().Kind() == reflect.Struct {
-		userID = fmt.Sprint(scope.PrimaryKeyValue())
-	} else {
-		userID = fmt.Sprint(user)
-	}
-
-	return userID
 }

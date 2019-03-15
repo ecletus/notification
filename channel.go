@@ -1,6 +1,9 @@
 package notification
 
-import "github.com/aghape/core"
+import (
+	"github.com/aghape/common"
+	"github.com/aghape/core"
+)
 
 func (notification *Notification) RegisterChannel(channel ChannelInterface) {
 	notification.Channels = append(notification.Channels, channel)
@@ -8,7 +11,7 @@ func (notification *Notification) RegisterChannel(channel ChannelInterface) {
 
 type ChannelInterface interface {
 	Send(message *Message, context *core.Context) error
-	GetNotifications(user interface{}, results *NotificationsResult, notification *Notification, context *core.Context) error
-	GetUnresolvedNotificationsCount(user interface{}, notification *Notification, context *core.Context) uint
-	GetNotification(user interface{}, notificationID string, notification *Notification, context *core.Context) (*QorNotification, error)
+	GetNotifications(user common.User, results *NotificationsResult, notification *Notification, context *core.Context) error
+	GetUnresolvedNotificationsCount(user common.User, notification *Notification, context *core.Context) uint
+	GetNotification(user common.User, notificationID string, notification *Notification, context *core.Context) (*QorNotification, error)
 }

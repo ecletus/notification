@@ -2,10 +2,12 @@ package notification
 
 import (
 	"github.com/aghape/admin"
+	"github.com/aghape/common"
 	"github.com/aghape/core"
 	"github.com/aghape/core/resource"
 	"github.com/aghape/core/utils"
 	"github.com/aghape/roles"
+	"github.com/moisespsena-go/xroute"
 )
 
 type Notification struct {
@@ -34,7 +36,7 @@ type NotificationsResult struct {
 	Resolved      []*QorNotification
 }
 
-func (notification *Notification) GetNotifications(user interface{}, context *core.Context) *NotificationsResult {
+func (notification *Notification) GetNotifications(user common.User, context *core.Context) *NotificationsResult {
 	var results = NotificationsResult{
 		Notification: notification,
 	}
@@ -46,7 +48,7 @@ func (notification *Notification) GetNotifications(user interface{}, context *co
 	return &results
 }
 
-func (notification *Notification) GetUnresolvedNotificationsCount(user interface{}, context *core.Context) uint {
+func (notification *Notification) GetUnresolvedNotificationsCount(user common.User, context *core.Context) uint {
 	var result uint
 	for _, channel := range notification.Channels {
 		result += channel.GetUnresolvedNotificationsCount(user, notification, context)
@@ -54,7 +56,7 @@ func (notification *Notification) GetUnresolvedNotificationsCount(user interface
 	return result
 }
 
-func (notification *Notification) GetNotification(user interface{}, messageID string, context *core.Context) *QorNotification {
+func (notification *Notification) GetNotification(user common.User, messageID string, context *core.Context) *QorNotification {
 	for _, channel := range notification.Channels {
 		if message, err := channel.GetNotification(user, messageID, notification, context); err == nil {
 			return message
@@ -72,16 +74,17 @@ func (notification *Notification) ConfigureQorResource(res resource.Resourcer) {
 		}
 
 		Admin.RegisterFuncMap("unresolved_notifications_count", func(context *admin.Context) uint {
-			return notification.GetUnresolvedNotificationsCount(context.CurrentUser, context.Context)
+			return notification.GetUnresolvedNotificationsCount(context.CurrentUser(), context.Context)
 		})
 
-		router := Admin.Router
 		notificationController := controller{Notification: notification}
 
-		router.Get("/!notifications", admin.NewHandler(notificationController.List, &admin.RouteConfig{
-			PermissionMode: roles.Read,
-			Resource:       res,
-		}))
+		Admin.OnRouter(func(r xroute.Router) {
+			r.Get("/!notifications", admin.NewHandler(notificationController.List, &admin.RouteConfig{
+				PermissionMode: roles.Read,
+				Resource:       res,
+			}))
+		})
 
 		for _, action := range notification.Actions {
 			actionController := controller{Notification: notification, action: action}
@@ -97,7 +100,7 @@ func (notification *Notification) ConfigureQorResource(res resource.Resourcer) {
 			}))
 
 			if action.Undo != nil {
-				res.ObjectRouter.Put(actionParam + "/undo", admin.NewHandler(actionController.UndoAction, &admin.RouteConfig{
+				res.ObjectRouter.Put(actionParam+"/undo", admin.NewHandler(actionController.UndoAction, &admin.RouteConfig{
 					PermissionMode: roles.Update,
 					Resource:       res,
 				}))

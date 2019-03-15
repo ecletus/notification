@@ -11,7 +11,19 @@ type Plugin struct {
 }
 
 func (p *Plugin) OnRegister() {
-	db.Events(p).DBOnMigrateGorm(func(e *db.GormDBEvent) error {
-		return e.DB.AutoMigrate(&QorNotification{}).Error
+	db.Events(p).DBOnMigrate(func(e *db.DBEvent) error {
+		return e.AutoMigrate(&QorNotification{}).Error
 	})
+}
+
+type PluginDefaultNotification struct {
+	NotificationKey string
+}
+
+func (p *PluginDefaultNotification) ProvideOptions() []string {
+	return []string{p.NotificationKey}
+}
+
+func (p *PluginDefaultNotification) Init(options *plug.Options) {
+	options.Set(p.NotificationKey, New(&Config{}))
 }

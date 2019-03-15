@@ -1,6 +1,7 @@
 package notification
 
 import (
+	"github.com/aghape/common"
 	"time"
 
 	"github.com/moisespsena-go/aorm"
@@ -8,8 +9,8 @@ import (
 )
 
 type Message struct {
-	From        interface{}
-	To          interface{}
+	From        common.User
+	To          common.User
 	Title       string
 	Body        string
 	MessageType string
@@ -17,7 +18,8 @@ type Message struct {
 }
 
 type QorNotification struct {
-	aorm.Model
+	aorm.KeyStringSerial
+	aorm.Timestamps
 	From        string
 	To          string
 	Title       string
