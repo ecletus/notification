@@ -1,16 +1,18 @@
 package notification
 
 import (
-	"github.com/ecletus/common"
 	"time"
 
-	"github.com/moisespsena-go/aorm"
+	"github.com/moisespsena-go/bid"
+
 	"github.com/ecletus/admin"
+	"github.com/ecletus/auth"
+	"github.com/moisespsena-go/aorm"
 )
 
 type Message struct {
-	From        common.User
-	To          common.User
+	From        auth.User
+	To          auth.User
 	Title       string
 	Body        string
 	MessageType string
@@ -18,10 +20,10 @@ type Message struct {
 }
 
 type QorNotification struct {
-	aorm.KeyStringSerial
+	aorm.Model
 	aorm.Timestamps
-	From        string
-	To          string
+	From        bid.BID
+	To          bid.BID
 	Title       string
 	Body        string `sql:"size:65532"`
 	MessageType string
@@ -34,7 +36,7 @@ func (qorNotification QorNotification) IsResolved() bool {
 
 func (qorNotification *QorNotification) Actions(context *admin.Context) (actions []*Action) {
 	var globalActions []*Action
-	if n := context.Get("Notification"); n != nil {
+	if n := context.GetSettings("Notification"); n != nil {
 		if notification, ok := n.(*Notification); ok {
 			for _, action := range notification.Actions {
 				if action.HasMessageType(qorNotification.MessageType) {

@@ -46,7 +46,7 @@ func (notification *Notification) Action(action *Action) error {
 	}
 
 	if action.Resource != nil && action.Handler == nil {
-		utils.ExitWithMsg("No Handler registered for action")
+		panic(fmt.Errorf("No Handler registered for action"))
 	}
 
 	notification.Actions = append(notification.Actions, action)

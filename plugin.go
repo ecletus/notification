@@ -24,6 +24,6 @@ func (p *PluginDefaultNotification) ProvideOptions() []string {
 	return []string{p.NotificationKey}
 }
 
-func (p *PluginDefaultNotification) Init(options *plug.Options) {
+func (p *PluginDefaultNotification) ProvidesOptions(options *plug.Options) {
 	options.Set(p.NotificationKey, New(&Config{}))
 }

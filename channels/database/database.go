@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"github.com/moisespsena-go/bid"
 	"strconv"
 
 	"github.com/ecletus/common"
@@ -36,15 +37,18 @@ func (d *Database) Setup(db *aorm.DB) error {
 
 func (database *Database) GetDB(context *core.Context) *aorm.DB {
 	if context.Site == nil {
-		return context.DB
+		return context.DB()
 	}
 	return context.Site.GetDB(database.Config.DBNameOrSystem()).DB
 }
 
 func (database *Database) Send(message *notification.Message, context *core.Context) error {
+	var ibid = func(id interface{}) bid.BID {
+		return id.(bid.BID)
+	}
 	notice := notification.QorNotification{
-		From:        message.From.GetID(),
-		To:          message.From.GetID(),
+		From:        ibid(aorm.IdOf(message.From)),
+		To:          ibid(aorm.IdOf(message.To)),
 		Title:       message.Title,
 		Body:        message.Body,
 		MessageType: message.MessageType,
@@ -55,7 +59,7 @@ func (database *Database) Send(message *notification.Message, context *core.Cont
 }
 
 func (database *Database) GetNotifications(user common.User, results *notification.NotificationsResult, _ *notification.Notification, context *core.Context) error {
-	var to = user.GetID()
+	var to = aorm.IdOf(user)
 	var db = database.GetDB(context)
 
 	var currentPage, perPage int
@@ -75,10 +79,10 @@ func (database *Database) GetNotifications(user common.User, results *notificati
 	}
 	offset := currentPage * perPage
 
-	commonDB := db.Order("created_at DESC").Where(fmt.Sprintf("%v = ?", db.Dialect().Quote("to")), to)
+	commonDB := db.Order("created_at DESC").Where(fmt.Sprintf("%v = ?", aorm.Quote(db.Dialect(), "to")), to)
 
 	// get unresolved notifications
-	if err := commonDB.Offset(offset).Limit(perPage).Find(&results.Notifications, fmt.Sprintf("%v IS NULL", db.Dialect().Quote("resolved_at"))).Error; err != nil {
+	if err := commonDB.Offset(offset).Limit(perPage).Find(&results.Notifications, fmt.Sprintf("%v IS NULL", aorm.Quote(db.Dialect(), "resolved_at"))).Error; err != nil {
 		return err
 	}
 
@@ -88,7 +92,7 @@ func (database *Database) GetNotifications(user common.User, results *notificati
 
 	if len(results.Notifications) == 0 {
 		var unreadedCount int
-		commonDB.Model(&notification.QorNotification{}).Where(fmt.Sprintf("%v IS NULL", db.Dialect().Quote("resolved_at"))).Count(&unreadedCount)
+		commonDB.Model(&notification.QorNotification{}).Where(fmt.Sprintf("%v IS NULL", aorm.Quote(db.Dialect(), "resolved_at"))).Count(&unreadedCount)
 		offset -= unreadedCount
 	} else if len(results.Notifications) < perPage {
 		offset = 0
@@ -96,25 +100,25 @@ func (database *Database) GetNotifications(user common.User, results *notificati
 	}
 
 	// get resolved notifications
-	return commonDB.Offset(offset).Limit(perPage).Find(&results.Resolved, fmt.Sprintf("%v IS NOT NULL", db.Dialect().Quote("resolved_at"))).Error
+	return commonDB.Offset(offset).Limit(perPage).Find(&results.Resolved, fmt.Sprintf("%v IS NOT NULL", aorm.Quote(db.Dialect(), "resolved_at"))).Error
 }
 
 func (database *Database) GetUnresolvedNotificationsCount(user common.User, _ *notification.Notification, context *core.Context) uint {
-	var to = user.GetID()
+	var to = aorm.IdOf(user)
 	var db = database.GetDB(context)
 
 	var result uint
-	db.Model(&notification.QorNotification{}).Where(fmt.Sprintf("%v = ? AND %v IS NULL", db.Dialect().Quote("to"), db.Dialect().Quote("resolved_at")), to).Count(&result)
+	db.Model(&notification.QorNotification{}).Where(fmt.Sprintf("%v = ? AND %v IS NULL", aorm.Quote(db.Dialect(), "to"), aorm.Quote(db.Dialect(), "resolved_at")), to).Count(&result)
 	return result
 }
 
 func (database *Database) GetNotification(user common.User, notificationID string, _ *notification.Notification, context *core.Context) (*notification.QorNotification, error) {
 	var (
 		notice notification.QorNotification
-		to     = user.GetID()
+		to     = aorm.IdOf(user)
 		db     = database.GetDB(context)
 	)
 
-	err := db.First(&notice, fmt.Sprintf("%v = ? AND %v = ?", db.Dialect().Quote("to"), db.Dialect().Quote("id")), to, notificationID).Error
+	err := db.First(&notice, fmt.Sprintf("%v = ? AND %v = ?", aorm.Quote(db.Dialect(), "to"), aorm.Quote(db.Dialect(), "id")), to, notificationID).Error
 	return &notice, err
 }

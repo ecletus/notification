@@ -1,19 +1,20 @@
 package notification
 
 import (
+	"fmt"
+
+	"github.com/ecletus/roles"
+	"github.com/moisespsena-go/xroute"
+
 	"github.com/ecletus/admin"
 	"github.com/ecletus/common"
 	"github.com/ecletus/core"
-	"github.com/ecletus/core/resource"
-	"github.com/ecletus/core/utils"
-	"github.com/ecletus/roles"
-	"github.com/moisespsena-go/xroute"
 )
 
 type Notification struct {
 	Config   *Config
-	Channels []ChannelInterface
-	Actions  []*Action
+	Channels []ChannelInterface `sql:"-"`
+	Actions  []*Action          `sql:"-"`
 }
 
 func New(config *Config) *Notification {
@@ -65,46 +66,46 @@ func (notification *Notification) GetNotification(user common.User, messageID st
 	return nil
 }
 
-func (notification *Notification) ConfigureQorResource(res resource.Resourcer) {
-	if res, ok := res.(*admin.Resource); ok {
-		Admin := res.GetAdmin()
+func (notification *Notification) AdminSetup(Admin *admin.Admin) {
+	Admin.AddResource(notification, &admin.Config{
+		ID: "!notifications",
+		Controller: &controller{Notification:notification},
+		Setup: func(res *admin.Resource) {
+			Admin := res.GetAdmin()
 
-		if len(notification.Channels) == 0 {
-			utils.ExitWithMsg("No channel defined for notification")
-		}
+			if len(notification.Channels) == 0 {
+				panic(fmt.Errorf("No channel defined for notification"))
+			}
 
-		Admin.RegisterFuncMap("unresolved_notifications_count", func(context *admin.Context) uint {
-			return notification.GetUnresolvedNotificationsCount(context.CurrentUser(), context.Context)
-		})
+			Admin.RegisterFuncMap("unresolved_notifications_count", func(context *admin.Context) uint {
+				return notification.GetUnresolvedNotificationsCount(context.CurrentUser(), context.Context)
+			})
 
-		notificationController := controller{Notification: notification}
+			notificationController := controller{Notification: notification}
 
-		Admin.OnRouter(func(r xroute.Router) {
-			r.Get("/!notifications", admin.NewHandler(notificationController.List, &admin.RouteConfig{
-				PermissionMode: roles.Read,
-				Resource:       res,
-			}))
-		})
+			Admin.OnRouter(func(r xroute.Router) {
+				r.Get("/!notifications", admin.NewHandler(notificationController.List, &admin.RouteConfig{
+					PermissionMode: roles.Read,
+					Resource:       res,
+				}))
+			})
 
-		for _, action := range notification.Actions {
-			actionController := controller{Notification: notification, action: action}
-			actionParam := "/!notifications/" + action.ToParam()
-			res.ObjectRouter.Get(actionParam, admin.NewHandler(actionController.Action, &admin.RouteConfig{
-				PermissionMode: roles.Update,
-				Resource:       res,
-			}))
+			for _, action := range notification.Actions {
+				actionController := controller{Notification: notification, action: action}
+				actionParam := "/!notifications/" + action.ToParam()
 
-			res.ObjectRouter.Put(actionParam, admin.NewHandler(actionController.Action, &admin.RouteConfig{
-				PermissionMode: roles.Update,
-				Resource:       res,
-			}))
-
-			if action.Undo != nil {
-				res.ObjectRouter.Put(actionParam+"/undo", admin.NewHandler(actionController.UndoAction, &admin.RouteConfig{
+				res.ItemRouter.Put(actionParam, admin.NewHandler(actionController.Action, &admin.RouteConfig{
 					PermissionMode: roles.Update,
 					Resource:       res,
 				}))
+
+				if action.Undo != nil {
+					res.ItemRouter.Put(actionParam+"/undo", admin.NewHandler(actionController.UndoAction, &admin.RouteConfig{
+						PermissionMode: roles.Update,
+						Resource:       res,
+					}))
+				}
 			}
-		}
-	}
+		},
+	})
 }

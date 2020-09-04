@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ecletus/admin"
 	"github.com/ecletus/responder"
+
+	"github.com/ecletus/admin"
 )
 
 type controller struct {
@@ -13,8 +14,8 @@ type controller struct {
 	action       *Action
 }
 
-func (c *controller) List(context *admin.Context) {
-	context.Set("Notification", c.Notification)
+func (c *controller) Index(context *admin.Context) (recordes interface{}) {
+	context.SetSettings("Notification", c.Notification)
 	var currentPage int
 	if p, err := strconv.Atoi(context.Request.URL.Query().Get("page")); err == nil {
 		currentPage = p
@@ -24,12 +25,17 @@ func (c *controller) List(context *admin.Context) {
 		"Messages":         c.Notification.GetNotifications(context.CurrentUser(), context.Context),
 		"LoadMoreNextPage": currentPage + 1,
 	})
+	return
+}
+
+func (c *controller) List(context *admin.Context) {
+
 }
 
 func (c *controller) Action(context *admin.Context) {
 	action := c.action
-	message := c.Notification.GetNotification(context.CurrentUser(), context.ResourceID, context.Context)
-	context.Set("Notification", c.Notification)
+	message := c.Notification.GetNotification(context.CurrentUser(), context.ResourceID.String(), context.Context)
+	context.SetSettings("Notification", c.Notification)
 
 	if context.Request.Method == "GET" {
 		context.Execute("action", action)
@@ -51,20 +57,20 @@ func (c *controller) Action(context *admin.Context) {
 				context.Flash(flash, "success")
 				http.Redirect(context.Writer, context.Request, context.Request.Referer(), http.StatusFound)
 			}).With("json", func() {
-				notification := c.Notification.GetNotification(context.CurrentUser(), context.ResourceID, context.Context)
-				context.JSON(map[string]string{"status": "ok", "message": flash, "notification": string(context.Render("notification", notification))}, "OK")
+				notification := c.Notification.GetNotification(context.CurrentUser(), context.ResourceID.String(), context.Context)
+				context.JSON(map[string]string{"status": "ok", "message": flash, "notification": string(context.RenderHtml("notification", notification))}, "OK")
 			}).Respond(context.Request)
 		} else {
-			notification := c.Notification.GetNotification(context.CurrentUser(), context.ResourceID, context.Context)
-			context.JSON(map[string]string{"status": "error", "error": action.FlashMessage(actionArgument, false /* succeed */, false /* undo */), "notification": string(context.Render("notification", notification))}, "OK")
+			notification := c.Notification.GetNotification(context.CurrentUser(), context.ResourceID.String(), context.Context)
+			context.JSON(map[string]string{"status": "error", "error": action.FlashMessage(actionArgument, false /* succeed */, false /* undo */), "notification": string(context.RenderHtml("notification", notification))}, "OK")
 		}
 	}
 }
 
 func (c *controller) UndoAction(context *admin.Context) {
 	action := c.action
-	message := c.Notification.GetNotification(context.CurrentUser(), context.ResourceID, context.Context)
-	context.Set("Notification", c.Notification)
+	message := c.Notification.GetNotification(context.CurrentUser(), context.ResourceID.String(), context.Context)
+	context.SetSettings("Notification", c.Notification)
 
 	var actionArgument = &ActionArgument{
 		Message: message,
@@ -83,11 +89,11 @@ func (c *controller) UndoAction(context *admin.Context) {
 			context.Flash(flash, "success")
 			http.Redirect(context.Writer, context.Request, context.Request.Referer(), http.StatusFound)
 		}).With("json", func() {
-			notification := c.Notification.GetNotification(context.CurrentUser(), context.ResourceID, context.Context)
-			context.JSON(map[string]string{"status": "ok", "message": flash, "notification": string(context.Render("notification", notification))}, "OK")
+			notification := c.Notification.GetNotification(context.CurrentUser(), context.ResourceID.String(), context.Context)
+			context.JSON(map[string]string{"status": "ok", "message": flash, "notification": string(context.RenderHtml("notification", notification))}, "OK")
 		}).Respond(context.Request)
 	} else {
-		notification := c.Notification.GetNotification(context.CurrentUser(), context.ResourceID, context.Context)
-		context.JSON(map[string]string{"status": "error", "error": action.FlashMessage(actionArgument, false /* succeed */, true /* undo */), "notification": string(context.Render("notification", notification))}, "OK")
+		notification := c.Notification.GetNotification(context.CurrentUser(), context.ResourceID.String(), context.Context)
+		context.JSON(map[string]string{"status": "error", "error": action.FlashMessage(actionArgument, false /* succeed */, true /* undo */), "notification": string(context.RenderHtml("notification", notification))}, "OK")
 	}
 }

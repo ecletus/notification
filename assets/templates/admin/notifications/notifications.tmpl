@@ -13,5 +13,6 @@
   {{end}}
 
   {{$notification_url := (url "!notifications")}}
-  <a class="qor-notification__load-more" data-loading="{{t "github_com:ecletus:notification.hints.loading" "LOADING..."}}" href="{{patch_url $notification_url "page" .Result.LoadMoreNextPage}}">{{t "github_com:ecletus:notification.hints.load_more" "LOAD MORE..."}}</a>
+  <a class="qor-notification__load-more" data-loading="{{t "github_com:ecletus:notification.hints.loading" "LOADING..."}}"
+     href="{{patch_url $notification_url "page" .Result.LoadMoreNextPage}}">{{t "github_com:ecletus:notification.hints.load_more" "LOAD MORE..."}}</a>
 </div>
